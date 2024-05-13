@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "depositsapp"
+version = "0.1.0"
+description = ""
+authors = ["Pawel Brodowski <brodi333@gmail.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.110.1"
+uvicorn = "^0.21.1"
+Jinja2 = "^3.1.2"
+pydantic = {extras = ["email"], version = "^2.7.0"}
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+pydantic-settings = "^2.2.1"
+python-multipart = "^0.0.9"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+mypy = "^1.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

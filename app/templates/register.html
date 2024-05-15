@@ -50,32 +50,60 @@
   <!-- /.form-box -->
 </div>
 <!-- /.register-box -->
+
+<div class="modal fade" id="register_confirmation_modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Account created!</h4>
+      </div>
+      <div class="modal-body">
+        <p>Your account has been successfully registered. You will be redirected to login page.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" id="register_confirmation_modal_ok_button">OK</button>
+      </div>
+    </div>
+    <!-- /.modal-content -->
+  </div>
+  <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
 {% endblock %}
 
 {% block js %}
 {{ super() }}
 <script type="text/javascript">
 $().ready(function() {
-  let registerForm = new RegisterForm('#register_form');
+  let registerPage = new RegisterPage('.register-page');
 });
 
 (function(window, $) {
   'use strict';
 
-  window.RegisterForm = function(wrapperSelector) {
+  window.RegisterPage = function(wrapperSelector) {
     this.$wrapper = $(wrapperSelector);
 
     this.$wrapper.on(
       'submit',
       this.handleFormSubmit.bind(this)
     );
+    this.$wrapper.on(
+      'click',
+      '#register_confirmation_modal_ok_button',
+      this.handleOkButtonClicked.bind(this)
+    );
   };
 
-  $.extend(window.RegisterForm.prototype, {
+  $.extend(window.RegisterPage.prototype, {
+    _selectors: {
+        form: '#register_form',
+        modal: '#register_confirmation_modal',
+    },
     handleFormSubmit: function(e) {
       e.preventDefault();
 
-      let $form = $(e.currentTarget);
+      let $form = this.$wrapper.find(this._selectors.form);
       let self = this;
       let formData = {};
       $.each($form.serializeArray(), function(key, fieldData) {
@@ -84,12 +112,15 @@ $().ready(function() {
 
       this._submitData(formData)
       .then(function(data) {
-        console.log('succ');
-        console.log(data);
-      })
-      .catch(function(errorData) {
+        clearForm(self.$wrapper.find(self._selectors.form));
+        self.$wrapper.find(self._selectors.modal).modal({backdrop: false});
+      }).catch(function(errorData) {
         mapErrorsToForm(self.$wrapper, errorData);
       });
+    },
+    handleOkButtonClicked: function(e) {
+      this.$wrapper.find(this._selectors.modal).modal('hide');
+      window.location.href = "{{ url_for('login') }}";
     },
     _submitData: function(data) {
       return new Promise(function(resolve, reject) {

@@ -3,6 +3,12 @@ function removeFormErrors($wrapper) {
   $wrapper.find('.form-group').removeClass('has-error');
 }
 
+function clearForm($wrapper) {
+  removeFormErrors($wrapper);
+  $wrapper.find('input').iCheck('uncheck');
+  $wrapper[0].reset();
+}
+
 function mapErrorsToForm($wrapper, errorData) {
   removeFormErrors($wrapper)
 

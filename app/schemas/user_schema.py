@@ -11,8 +11,8 @@ class BaseUser(BaseModel):
 class UserIn(BaseUser):
     password: str = Field(min_length=5, max_length=20)
 
-    @classmethod
     @field_validator('password')
+    @classmethod
     def check_password_complexity(cls, value):
         if not any(char.isupper() for char in value):
             raise ValueError('Password must contain at least one uppercase letter')
@@ -27,8 +27,8 @@ class UserRegister(UserIn):
     confirm_password: str
     agreement: bool
 
-    @classmethod
     @field_validator('agreement')
+    @classmethod
     def check_agreement(cls, value):
         if not value:
             raise ValueError('You must accept terms')

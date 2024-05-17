@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -12,7 +12,15 @@ router = APIRouter()
 
 
 @router.post("/users/register")
-async def user_register(registered_user: user_schema.UserRegister) -> user_schema.UserOut:
+async def user_register(registered_user: Annotated[user_schema.UserRegister, Body(examples=[
+    {
+        "full_name": "string",
+        "email": "user@example.com",
+        "password": "String1",
+        "confirm_password": "String1",
+        "agreement": True
+    },
+])]) -> user_schema.UserOut:
     user_in_db = user_schema.UserInDb(
         **registered_user.model_dump(),
         id=registered_user.email,
@@ -34,6 +42,7 @@ async def get_users():
 
 @router.post("/token")
 async def get_access_token(
+        request: Request,
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> token_schema.Token:
     user_in_db = security.authenticate_user(form_data.username, form_data.password)
@@ -45,6 +54,7 @@ async def get_access_token(
         )
     access_token_expires = timedelta(minutes=config.settings.SECURITY_ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
-        data={"sub": user_in_db.username}, expires_delta=access_token_expires
+        data={"sub": user_in_db.email}, expires_delta=access_token_expires
     )
+    request.session["jwt_token"] = access_token
     return token_schema.Token(access_token=access_token, token_type="bearer")

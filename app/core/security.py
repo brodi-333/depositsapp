@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -12,6 +12,34 @@ from ..schemas import user_schema, token_schema
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+credentials_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
+
+async def extract_header_token(request: Request) -> str | None:
+    try:
+        return await oauth2_scheme(request)
+    except HTTPException:
+        return None
+
+
+def extract_session_token(request: Request) -> str | None:
+    return request.session.get("jwt_token")
+
+
+def auth_header_or_session(
+    header_token: Annotated[str, Depends(extract_header_token)],
+    session_token: Annotated[str, Depends(extract_session_token)],
+) -> str | None:
+    if header_token:
+        return header_token
+    if session_token:
+        return session_token
+    raise credentials_exception
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -33,12 +61,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> user_schema.UserInDb:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+async def get_current_user(token: Annotated[str, Depends(auth_header_or_session)]) -> user_schema.UserInDb:
     try:
         payload = jwt.decode(token, config.settings.SECRET_KEY, algorithms=[config.settings.SECURITY_ALGORITHM])
         username: str = payload.get("sub")

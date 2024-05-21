@@ -8,10 +8,11 @@ from passlib.context import CryptContext
 from . import security_user_provider, config
 
 from ..schemas import user_schema, token_schema
+from ..routers import routes
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=routes.API_TOKEN)
 
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,

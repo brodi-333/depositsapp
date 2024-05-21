@@ -5,13 +5,14 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.schemas import user_schema, token_schema
+from ..schemas import user_schema, token_schema
 from ..core import security, security_user_provider, config
+from . import routes
 
 router = APIRouter()
 
 
-@router.post("/users/register")
+@router.post(routes.API_USER_REGISTER)
 async def user_register(registered_user: Annotated[user_schema.UserRegister, Body(examples=[
     {
         "full_name": "string",
@@ -35,12 +36,12 @@ async def user_register(registered_user: Annotated[user_schema.UserRegister, Bod
     return user_out
 
 
-@router.get("/users", response_model=list[user_schema.UserOut])
+@router.get(routes.API_USER_LIST, response_model=list[user_schema.UserOut])
 async def get_users():
     return list(security_user_provider.get_users().values())
 
 
-@router.post("/token")
+@router.post(routes.API_TOKEN)
 async def get_access_token(
         request: Request,
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],

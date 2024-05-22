@@ -11,15 +11,15 @@ class BaseUser(BaseModel):
 class UserIn(BaseUser):
     password: str = Field(min_length=5, max_length=20)
 
-    @field_validator('password')
+    @field_validator("password")
     @classmethod
     def check_password_complexity(cls, value):
         if not any(char.isupper() for char in value):
-            raise ValueError('Password must contain at least one uppercase letter')
+            raise ValueError("Password must contain at least one uppercase letter")
         if not any(char.islower() for char in value):
-            raise ValueError('Password must contain at least one lowercase letter')
+            raise ValueError("Password must contain at least one lowercase letter")
         if not any(char.isdigit() for char in value):
-            raise ValueError('Password must contain at least one digit')
+            raise ValueError("Password must contain at least one digit")
         return value
 
 
@@ -27,17 +27,17 @@ class UserRegister(UserIn):
     confirm_password: str
     agreement: bool
 
-    @field_validator('agreement')
+    @field_validator("agreement")
     @classmethod
     def check_agreement(cls, value):
         if not value:
-            raise ValueError('You must accept terms')
+            raise ValueError("You must accept terms")
         return value
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def check_passwords_match(self) -> Self:
         if self.password != self.confirm_password:
-            raise ValueError('Passwords do not match')
+            raise ValueError("Passwords do not match")
         return self
 
 

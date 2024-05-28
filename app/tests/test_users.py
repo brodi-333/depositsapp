@@ -149,3 +149,31 @@ def test_registration_successful():
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == expected_response
+
+
+def test_login_wrong_data():
+    form_data = {
+        "username": "invalid_email@email.com",
+        "password": "invalid_password",
+    }
+    response = client.post(routes.API_TOKEN, data=form_data)
+    expected_response = {
+        "detail": "Incorrect username or password"
+    }
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json() == expected_response
+
+
+def test_login_successful():
+    response = client.post(routes.API_USER_REGISTER, json=register_valid_input_json)
+    assert response.status_code == status.HTTP_200_OK
+
+    form_data = {
+        "username": register_valid_input_json["email"],
+        "password": register_valid_input_json["password"],
+    }
+    response = client.post(routes.API_TOKEN, data=form_data)
+    assert response.status_code == status.HTTP_200_OK
+    assert "access_token" in response
+    assert response.json()["token_type"] == "bearer"

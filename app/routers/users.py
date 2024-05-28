@@ -12,7 +12,7 @@ from . import routes
 router = APIRouter()
 
 
-@router.post(routes.API_USER_REGISTER)
+@router.post(routes.API_USERS_REGISTER)
 async def user_register(registered_user: Annotated[user_schema.UserRegister, Body(examples=[
     {
         "full_name": "string",
@@ -36,7 +36,7 @@ async def user_register(registered_user: Annotated[user_schema.UserRegister, Bod
     return user_out
 
 
-@router.get(routes.API_USER_LIST, response_model=list[user_schema.UserOut])
+@router.get(routes.API_USERS_LIST, response_model=list[user_schema.UserOut])
 async def get_users():
     return list(security_user_provider.get_users().values())
 
@@ -59,3 +59,14 @@ async def get_access_token(
     )
     request.session["jwt_token"] = access_token
     return token_schema.Token(access_token=access_token, token_type="bearer")
+
+
+@router.get(routes.API_USERS_ME, responses={
+    status.HTTP_401_UNAUTHORIZED: {"description": "Invalid credentials", "content": {
+        "application/json": {"example": {"detail": "Could not validate credentials"}}
+    }},
+})
+async def get_user_me(
+        user: Annotated[user_schema.UserInDb, Depends(security.get_current_active_user)]
+) -> user_schema.UserOut:
+    return user

@@ -2,6 +2,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from ..main import app
 from ..routers import routes
+from ..schemas import user_schema
 
 
 client = TestClient(app)
@@ -17,7 +18,7 @@ register_valid_input_json = {
 
 
 def test_register_missing_data():
-    response = client.post(routes.API_USER_REGISTER, json={})
+    response = client.post(routes.API_USERS_REGISTER, json={})
 
     expected_errors = [
         {"type": "missing", "loc": ["body", "full_name"], "msg": "Field required", "input": {}},
@@ -34,7 +35,7 @@ def test_register_missing_data():
 
 def test_register_invalid_full_name():
     input_value = "a"
-    response = client.post(routes.API_USER_REGISTER, json={"full_name": input_value})
+    response = client.post(routes.API_USERS_REGISTER, json={"full_name": input_value})
 
     expected_error = {
         "type": "string_too_short",
@@ -49,7 +50,7 @@ def test_register_invalid_full_name():
 
 def test_register_invalid_password_length():
     input_value = "a"
-    response = client.post(routes.API_USER_REGISTER, json={"password": input_value})
+    response = client.post(routes.API_USERS_REGISTER, json={"password": input_value})
 
     expected_error = {
         "type": "string_too_short",
@@ -62,7 +63,7 @@ def test_register_invalid_password_length():
     assert expected_error in response.json()["detail"]
 
     input_value = "this password is too long - it should be shorter"
-    response = client.post(routes.API_USER_REGISTER, json={"password": input_value})
+    response = client.post(routes.API_USERS_REGISTER, json={"password": input_value})
 
     expected_error = {
         "type": "string_too_long",
@@ -79,7 +80,7 @@ def test_register_passwords_does_not_match():
     input_json = register_valid_input_json.copy()
     input_json["confirm_password"] = "Other_pass1"
 
-    response = client.post(routes.API_USER_REGISTER, json=input_json)
+    response = client.post(routes.API_USERS_REGISTER, json=input_json)
 
     expected_error = {
         "type": "value_error",
@@ -112,7 +113,7 @@ def test_password_strength():
         input_json["password"] = test_case["input"]
         input_json["confirm_password"] = test_case["input"]
 
-        response = client.post(routes.API_USER_REGISTER, json=input_json)
+        response = client.post(routes.API_USERS_REGISTER, json=input_json)
 
         expected_error["input"] = test_case["input"]
         expected_error["msg"] = test_case["error"]
@@ -125,7 +126,7 @@ def test_agreement_required():
     input_json = register_valid_input_json.copy()
     input_json["agreement"] = False
 
-    response = client.post(routes.API_USER_REGISTER, json=input_json)
+    response = client.post(routes.API_USERS_REGISTER, json=input_json)
 
     expected_error = {
         "type": "value_error",
@@ -139,7 +140,7 @@ def test_agreement_required():
 
 
 def test_registration_successful():
-    response = client.post(routes.API_USER_REGISTER, json=register_valid_input_json)
+    response = client.post(routes.API_USERS_REGISTER, json=register_valid_input_json)
 
     expected_response = register_valid_input_json.copy()
     del expected_response["password"]
@@ -165,15 +166,33 @@ def test_login_wrong_data():
     assert response.json() == expected_response
 
 
-def test_login_successful():
-    response = client.post(routes.API_USER_REGISTER, json=register_valid_input_json)
-    assert response.status_code == status.HTTP_200_OK
+def test_users_me_unauthorized():
+    response = client.get(routes.API_USERS_ME)
+    expected_response = {
+      "detail": "Could not validate credentials"
+    }
 
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json() == expected_response
+
+
+def test_login_successful():
     form_data = {
         "username": register_valid_input_json["email"],
         "password": register_valid_input_json["password"],
     }
     response = client.post(routes.API_TOKEN, data=form_data)
     assert response.status_code == status.HTTP_200_OK
-    assert "access_token" in response
+    assert "access_token" in response.json()
     assert response.json()["token_type"] == "bearer"
+
+
+def test_users_me_successful():
+    response = client.get(routes.API_USERS_ME)
+    expected_response = register_valid_input_json.copy()
+    expected_response["id"] = expected_response["email"]
+
+    user_out = user_schema.UserOut(**expected_response)
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == user_out.model_dump()

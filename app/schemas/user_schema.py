@@ -47,3 +47,4 @@ class UserOut(BaseUser):
 
 class UserInDb(UserOut):
     hashed_password: str
+    disabled: bool = False

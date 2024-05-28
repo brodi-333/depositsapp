@@ -79,7 +79,7 @@ async def get_current_user(token: Annotated[str, Depends(auth_header_or_session)
 
 async def get_current_active_user(
         current_user: Annotated[user_schema.UserInDb, Depends(get_current_user)],
-):
+) -> user_schema.UserInDb:
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
